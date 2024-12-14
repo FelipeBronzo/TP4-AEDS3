@@ -1,34 +1,32 @@
 package src.util;
+
 import java.util.Random;
-import java.util.Scanner;
 import java.math.BigInteger;
 
-class RSA{
+public class RSA {
 
-    /* Fizemos o RSA de maneira que 'p' e 'q' sejam escolhidos aleatoriamente dentre algumas opções
-     * O que acabou gerando algumas funções a mais para calcular o 'd' e o 'e'
+    /*
+     * Implementação do RSA onde 'p' e 'q' são números primos escolhidos aleatoriamente
+     * de uma lista predefinida. Este algoritmo inclui métodos para gerar as chaves,
+     * criptografar e descriptografar mensagens.
      */
 
-    // 97 - 122
+    private int p, q, n, z, d, e; // Variáveis principais do algoritmo RSA
+    private int[] opcoes_p = {3, 5, 7}; // Lista de valores possíveis para 'p'
+    private int[] opcoes_q = {11, 13, 17}; // Lista de valores possíveis para 'q'
 
-    private int p, q, n, z, d, e;
-    private int[] opcoes_p = {3, 5, 7};
-    private int[] opcoes_q = {11, 13, 17};
-
-    RSA(){
+    // Construtor que inicializa o RSA com valores aleatórios para 'p' e 'q'
+    public RSA() {
         Random random = new Random();
-        this.p = opcoes_p[random.nextInt(opcoes_p.length)];
-        this.q = opcoes_q[random.nextInt(opcoes_q.length)];
-        this.n = p*q;
-        this.z = (p-1) * (q-1);
-        // Encontrar d que seja primo relativo a z
-        this.d = encontrarPrimoRelativo(z);
-
-        // Encontrar e que satisfaça (e * d) % z == 1
-        this.e = encontrarInversoModular(d, z);
+        this.p = opcoes_p[random.nextInt(opcoes_p.length)]; // Escolhe um 'p' aleatório
+        this.q = opcoes_q[random.nextInt(opcoes_q.length)]; // Escolhe um 'q' aleatório
+        this.n = p * q; // Calcula 'n' (parte da chave pública)
+        this.z = (p - 1) * (q - 1); // Calcula o 'z' (totiente de n)
+        this.d = encontrarPrimoRelativo(z); // Gera 'd', uma chave privada
+        this.e = encontrarInversoModular(d, z); // Gera 'e', parte da chave pública
     }
 
-        // Função para calcular o MDC usando o algoritmo de Euclides
+    // Calcula o MDC (Máximo Divisor Comum) usando o algoritmo de Euclides
     private int mdc(int a, int b) {
         while (b != 0) {
             int resto = a % b;
@@ -37,18 +35,18 @@ class RSA{
         }
         return a;
     }
-    
-    // Função para encontrar o primeiro número primo relativo a z
+
+    // Encontra o primeiro número primo relativo a 'z'
     private int encontrarPrimoRelativo(int z) {
-        for (int i = 2; i < z; i++) { // Começa de 2 porque 1 é trivial
-            if (mdc(i, z) == 1) {
+        for (int i = 2; i < z; i++) { // Começa do 2 porque 1 é trivial
+            if (mdc(i, z) == 1) { // Verifica se é primo relativo a 'z'
                 return i;
             }
         }
         throw new RuntimeException("Não foi possível encontrar um primo relativo a " + z);
     }
 
-    // Função para encontrar o inverso modular usando o Algoritmo Estendido de Euclides
+    // Encontra o inverso modular de 'd' com relação a 'z' usando o Algoritmo Estendido de Euclides
     private int encontrarInversoModular(int d, int z) {
         int t = 0, novoT = 1;
         int r = z, novoR = d;
@@ -56,7 +54,7 @@ class RSA{
         while (novoR != 0) {
             int quociente = r / novoR;
 
-            // Atualizar r e t
+            // Atualiza os valores de 'r' e 't'
             int temp = novoR;
             novoR = r - quociente * novoR;
             r = temp;
@@ -75,55 +73,46 @@ class RSA{
         return t;
     }
 
-    private int[] encontrandoP(String texto){
+    // Converte um texto em um array de inteiros representando a posição das letras no alfabeto
+    private int[] encontrandoP(String texto) {
         int[] textoP = new int[texto.length()];
         String textoMinusculo = texto.toLowerCase();
 
-        for(int i = 0; i < texto.length(); i++){
-            textoP[i] = (int) textoMinusculo.charAt(i) - 96;
+        for (int i = 0; i < texto.length(); i++) {
+            textoP[i] = (int) textoMinusculo.charAt(i) - 96; // 'a' = 1, 'b' = 2, ...
         }
 
         return textoP;
     }
 
-    public int[] criptografia(String texto){
-        int[] textoP = encontrandoP(texto);
+    // Criptografa uma mensagem usando a chave pública (n, e)
+    public int[] criptografia(String texto) {
+        int[] textoP = encontrandoP(texto); // Converte o texto para números
         int[] textoCriptografado = new int[texto.length()];
         BigInteger[] textoCalculo = new BigInteger[texto.length()];
         BigInteger modBase = BigInteger.valueOf(this.n);
-        BigInteger base;
 
-        for(int i = 0; i < texto.length(); i++){
-            base = BigInteger.valueOf(textoP[i]);
-            textoCalculo[i] = base.pow(this.e);
-            textoCalculo[i] = textoCalculo[i].mod(modBase);
+        for (int i = 0; i < texto.length(); i++) {
+            BigInteger base = BigInteger.valueOf(textoP[i]);
+            textoCalculo[i] = base.pow(this.e).mod(modBase); // Cálculo da criptografia
+            textoCriptografado[i] = textoCalculo[i].intValue(); // Converte o resultado para inteiro
         }
 
-        for (int i = 0; i < textoCalculo.length; i++) {
-            textoCriptografado[i] = textoCalculo[i].intValue(); // Converte BigInteger para int
-        }
-
-        return textoCriptografado;
+        return textoCriptografado; // Retorna o texto criptografado como um array de inteiros
     }
 
-    public static void main(String[] args) {
+    // Descriptografa uma mensagem usando a chave privada (n, d)
+    public String descriptografar(int[] textoCripto) {
+        StringBuilder textoDescriptografado = new StringBuilder();
+        BigInteger[] textoCalculo = new BigInteger[textoCripto.length];
+        BigInteger modBase = BigInteger.valueOf(this.n);
 
-        RSA obj = new RSA();
-        Scanner sc = new Scanner(System.in);
-        
-        String texto = sc.nextLine();
-        int[] textoCriptografado = obj.criptografia(texto);
-
-        System.out.println("Escolhas das chaves: \np = " + obj.p + "\nq = " +  obj.q + "\nn = " + obj.n + "\nz = " + obj.z +"\nd = " + obj.d + "\ne = " + obj.e);
-
-        System.out.print("[");
-        for (int i = 0; i < textoCriptografado.length; i++) {
-            System.out.print(textoCriptografado[i]);
-            if (i < textoCriptografado.length - 1) { // Adicionar vírgula exceto no último elemento
-                System.out.print(", ");
-            }
+        for (int i = 0; i < textoCripto.length; i++) {
+            BigInteger base = BigInteger.valueOf(textoCripto[i]);
+            textoCalculo[i] = base.pow(this.d).mod(modBase); // Cálculo da descriptografia
+            textoDescriptografado.append((char) (textoCalculo[i].intValue() + 96)); // Converte para caractere
         }
-        System.out.println("]");
-        sc.close();
+
+        return textoDescriptografado.toString(); // Retorna o texto descriptografado como String
     }
 }

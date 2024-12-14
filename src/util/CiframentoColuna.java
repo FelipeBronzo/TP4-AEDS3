@@ -1,15 +1,15 @@
 package src.util;
 import java.util.Arrays;
 
-class CiframentoColuna {
+public class CiframentoColuna {
 
     private String chave;
 
-    CiframentoColuna(String chave){
+    public CiframentoColuna(String chave){
         this.chave = chave.toLowerCase();
     }
 
-    private char[][] construindoMatriz(String texto) {
+    public char[][] construindoMatriz(String texto) {
         String textoSemEspaco = texto.replaceAll(" ", "");
         int linhas = (textoSemEspaco.length() + chave.length() - 1) / chave.length(); // Calcula o número de linhas
         char[][] matriz = new char[linhas][chave.length()];
@@ -28,7 +28,7 @@ class CiframentoColuna {
         return matriz;
     }
 
-    String criptografia(char[][] matriz) {
+    public String criptografia(char[][] matriz) {
     // Determinar a ordem das colunas com base na chave
     Integer[] ordem = new Integer[chave.length()];
     for (int i = 0; i < chave.length(); i++) {
@@ -52,23 +52,45 @@ class CiframentoColuna {
     return resultado.toString();
 }
 
-    public static void main(String[] args) {
+    public String descriptografia(String textoCriptografado) {
+        int numLinhas = (textoCriptografado.length() + chave.length() - 1) / chave.length();
+        int numColunas = chave.length();
+        int numEspacosVazios = (numLinhas * numColunas) - textoCriptografado.length();
+        char[][] matriz = new char[numLinhas][numColunas];
 
-        CiframentoColuna obj = new CiframentoColuna("Rena");
-
-        char[][] matriz = obj.construindoMatriz("ABCDEFGHIJKLMNOPQRS");
-
-        for (int i = 0; i < matriz.length; i++) { // Percorre as linhas
-            for (int j = 0; j < matriz[i].length; j++) { // Percorre as colunas
-                System.out.print(matriz[i][j] + " "); // Imprime cada elemento com um espaço
-            }
-            System.out.println(); // Nova linha após cada linha da matriz
+        // Determinar a ordem das colunas com base na chave
+        Integer[] ordem = new Integer[numColunas];
+        for (int i = 0; i < numColunas; i++) {
+            ordem[i] = i;
         }
 
-        String resultado = obj.criptografia(matriz);
-        System.out.println("\nTexto final criptografado: " + resultado);
-        
+        // Ordenar os índices com base nos caracteres da chave
+        Arrays.sort(ordem, (a, b) -> Character.compare(chave.charAt(a), chave.charAt(b)));
+
+        // Preencher a matriz por colunas na ordem definida pela chave
+        int x = 0;
+        for (int coluna : ordem) {
+            for (int linha = 0; linha < numLinhas; linha++) {
+                // Não preencher as células que correspondem aos espaços em branco no final
+                if (linha == numLinhas - 1 && coluna >= numColunas - numEspacosVazios) {
+                    matriz[linha][coluna] = ' ';
+                } else if (x < textoCriptografado.length()) {
+                    matriz[linha][coluna] = textoCriptografado.charAt(x++);
+                }
+            }
+        }
+
+        // Reconstruir o texto original percorrendo a matriz linha por linha
+        StringBuilder textoOriginal = new StringBuilder();
+        for (int i = 0; i < numLinhas; i++) { // Percorrer as linhas
+            for (int j = 0; j < numColunas; j++) { // Percorrer as colunas
+                if (matriz[i][j] != ' ') {
+                    textoOriginal.append(matriz[i][j]);
+                }
+            }
+        }
+
+        return textoOriginal.toString();
     }
 
-    
 }
